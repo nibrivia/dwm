@@ -1,21 +1,24 @@
 /* See LICENSE file for copyright and license details. */
+#include <X11/XF86keysym.h>
 
 /* appearance */
 static const unsigned int borderpx  = 1;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
-static const char *fonts[]          = { "monospace:size=10" };
-static const char dmenufont[]       = "monospace:size=10";
+static const char *fonts[]          = { "ubuntu-mono:size=10" };
+static const char dmenufont[]       = "ubuntu-mono:size=10";
 static const char col_gray1[]       = "#222222";
 static const char col_gray2[]       = "#444444";
 static const char col_gray3[]       = "#bbbbbb";
 static const char col_gray4[]       = "#eeeeee";
+static const char col_lightpurple[] = "#9d70ff";
+static const char col_darkpurple[] = "#3c1395";
 static const char col_cyan[]        = "#005577";
 static const char *colors[][3]      = {
 	/*               fg         bg         border   */
-	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
-	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
+	[SchemeNorm] = { col_gray4, col_gray1, col_gray1 },
+	[SchemeSel]  = { col_gray4, col_darkpurple,  col_lightpurple  },
 };
 
 /* tagging */
@@ -27,14 +30,22 @@ static const Rule rules[] = {
 	 *	WM_NAME(STRING) = title
 	 */
 	/* class      instance    title       tags mask     isfloating   monitor */
-	{ "Gimp",     NULL,       NULL,       0,            1,           -1 },
-	{ "Firefox",  NULL,       NULL,       1 << 8,       0,           -1 },
+	{ "Zoom",     NULL,       NULL,       1 << 6,       0,           -1 },
+	{ NULL,       NULL,       "zoom",          0,       1,           -1 },
+	{ "Signal",   NULL,       NULL,       1 << 7,       0,           -1 },
+	{ "Caprine",  NULL,       NULL,       1 << 7,       0,           -1 },
+	{ "RStudio",  NULL,       NULL,       1 << 4,       0,           -1 },
+	{ "Slack",    NULL,       NULL,       1 << 8,       0,           -1 },
+	{ "Peek",     NULL,       NULL,            0,       1,           -1 },
+	{ NULL,       NULL,     "mutt",       1 << 8,       0,           -1 },
+	{ NULL,       NULL,     "float",           0,       1,           -1 },
+
 };
 
 /* layout(s) */
 static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
 static const int nmaster     = 1;    /* number of clients in master area */
-static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
+static const int resizehints = 0;    /* 1 means respect size hints in tiled resizals */
 static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen window */
 
 static const Layout layouts[] = {
@@ -53,29 +64,77 @@ static const Layout layouts[] = {
 	{ MODKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} },
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
-#define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
+#define SHCMD(cmd) { .v = (const char*[]){ "/bin/bash", "-c", cmd, NULL } }
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
-static const char *termcmd[]  = { "xterm", NULL };
+static const char *dmenucmd[] = { "dmenu_run", NULL };
+static const char *termcmd[]  = { "terminator", NULL };
+static const char *xtermcmd[]  = { "st", NULL };
+static const char *ffxcmd[]   = { "firefox", NULL };
+static const char *chromecmd[]   = { "google-chrome-stable", NULL };
+static const char *ffxprivcmd[]   = { "firefox", "--private-window", NULL };
+static const char *lockcmd[]  = { "slock", NULL };
+static const char *locksuscmd[]  = { "slock", "systemctl", "suspend", "-i", NULL };
+static const char *muttcmd[]  = { "terminator", "--title=mutt", "-e", "mutt", NULL };
+static const char *signalcmd[]  = { "signal-desktop", NULL };
+static const char *rstudiocmd[]  = { "rstudio", NULL };
+static const char *volumeinc[]  = { "/home/olivia/bin/volume-control", "up",   NULL };
+static const char *volumedec[]  = { "/home/olivia/bin/volume-control", "down", NULL };
+static const char *volumeoff[]  = { "/home/olivia/bin/volume-control", "mute", NULL };
+static const char *micoff[]  = { "/home/olivia/bin/volume-control", "micmute", NULL };
+static const char *slackcmd[]  = { "/snap/bin/slack", NULL };
+static const char *brightnessinc[]  = { "brightnessctl", "-e", "s", "2%+", NULL };
+static const char *brightnessmax[]  = { "brightnessctl", "-e", "s", "100%", NULL };
+static const char *brightnessdec[]  = { "brightnessctl", "-e", "s", "2%-", NULL };
+static const char *brightnessmin[]  = { "brightnessctl", "-e", "s", "1%", NULL };
+static const char *poweroff[]  = { "poweroff", NULL };
+static const char *autodisplay[] = { "/home/olivia/bin/auto-display", NULL };
+static const char *bluetoothconnect[] = { "/home/olivia/bin/bluetooth-connect", NULL };
+static const char *wifitoggle[] = { "/home/olivia/bin/wifi-toggle", NULL };
+static const char *taskadd[]  = { "/home/olivia/bin/add-task", NULL};
+static const char *taskedit[]  = { "/home/olivia/bin/edit-tasks", NULL};
+static const char *launchcolumn[] = { "/home/olivia/bin/launch-column", NULL };
+static const char *relaunchcolumn[] = { "/home/olivia/bin/relaunch-column", NULL };
+static const char *nolap[] = { "autorandr", "-c", "nolap", NULL };
+static const char *xe242[] = { "autorandr", "-c", "E242", NULL };
+static const char *logout[]  = { "bash", "-c", "/usr/bin/pkill -P $( pgrep .xsession )", NULL };
+static const char *dunstpause[]  = { "dunstctl", "set-paused", "toggle", NULL};
+static const char *dunstclose[]  = { "dunstctl", "close", NULL};
+static const char *dunstcloseall[]  = { "dunstctl", "close-all", NULL};
+static const char *dunstpop[]  = { "dunstctl", "history-pop", NULL};
+static const char *killslack[]  = { "killall", "slack", NULL};
+static const char *connectMPOW[]  =  { "bluetoothctl", "connect", "E9:08:EF:64:D4:44", NULL};
+static const char *peek[]  =  { "peek", NULL};
+static const char *vscodecmd[]  =  { "code", NULL};
+static const char *backendcmd[]  =  { "st", "nvim", "-S", "/home/olivia/column/backend/Session.vim", NULL};
+static const char *launchdevcmd[]  =  { "/home/olivia/bin/launch-dev", NULL};
+static const char *playpause[]  =  { "playerctl", "play-pause", NULL};
+static const char *nexttrack[]  =  { "playerctl", "next", NULL};
+static const char *prevtrack[]  =  { "playerctl", "previous", NULL};
+static const char *screenshotcmd[]  =  { "/home/olivia/bin/screenshot.sh", NULL};
 
-static const Key keys[] = {
+
+
+static Key keys[] = {
 	/* modifier                     key        function        argument */
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
-	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
+	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = xtermcmd } },
+	{ MODKEY|Mod4Mask,              XK_Return, spawn,          {.v = xtermcmd } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
 	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
+	{ MODKEY|ControlMask,           XK_h,      setmfact,       {.f = -0.005} },
+	{ MODKEY|ControlMask,           XK_l,      setmfact,       {.f = +0.005} },
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
 	{ MODKEY,                       XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
 	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
-	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[1]} },
+	//{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[1]} },
 	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
 	{ MODKEY,                       XK_space,  setlayout,      {0} },
 	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
@@ -94,12 +153,66 @@ static const Key keys[] = {
 	TAGKEYS(                        XK_7,                      6)
 	TAGKEYS(                        XK_8,                      7)
 	TAGKEYS(                        XK_9,                      8)
+
+	{ MODKEY,                       XK_o,      spawn,          {.v = taskadd} },
+	{ MODKEY|ShiftMask,             XK_o,      spawn,          {.v = taskedit} },
+    { MODKEY|ShiftMask,             XK_f,      spawn,          {.v = ffxcmd} },
+	{ MODKEY|ShiftMask,             XK_g,      spawn,          {.v = chromecmd} },
+	{ MODKEY|ShiftMask,             XK_b,      spawn,          {.v = backendcmd} },
+	{ MODKEY|ShiftMask,             XK_n,      spawn,          {.v = launchdevcmd} },
+	{ MODKEY|ShiftMask,             XK_a,      spawn,          {.v = bluetoothconnect} },
+	{ ControlMask|ShiftMask,        XK_p,      spawn,          {.v = ffxprivcmd} },
+	{ MODKEY|ShiftMask,             XK_s,      spawn,          {.v = screenshotcmd} },
+	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd} },
+	{ Mod4Mask|ShiftMask,           XK_l,      spawn,          {.v = locksuscmd} },
+	// { MODKEY|ShiftMask,             XK_m,      spawn,          {.v = muttcmd} },
+	// { MODKEY|ShiftMask,             XK_b,      spawn,          {.v = cambcmd} },
+	// { MODKEY|ShiftMask,             XK_n,      spawn,          {.v = nolap} },
+	// { MODKEY|ShiftMask,             XK_e,      spawn,          {.v = xe242} },
+	// { MODKEY|ShiftMask,             XK_z,      spawn,          {.v = killslack} },
+
+	{ MODKEY|ShiftMask,             XK_p,      spawn,          {.v = dunstpause} },
+	{ ControlMask,              XK_space,      spawn,          {.v = dunstclose} },
+	{ ControlMask|ShiftMask,    XK_space,      spawn,          {.v = dunstcloseall} },
+	{ ControlMask,              XK_grave,      spawn,          {.v = dunstpop} },
+
+	{ 0,                XF86XK_AudioMute,      spawn,          {.v = volumeoff} },
+	{ Mod4Mask,                    XK_F1,      spawn,          {.v = volumeoff} },
+	{ 0,         XF86XK_AudioLowerVolume,      spawn,          {.v = volumedec} },
+	{ Mod4Mask,                    XK_F2,      spawn,          {.v = volumedec} },
+	{ 0,         XF86XK_AudioRaiseVolume,      spawn,          {.v = volumeinc} },
+	{ Mod4Mask,                    XK_F3,      spawn,          {.v = volumeinc} },
+	{ 0,             XF86XK_AudioMicMute,      spawn,          {.v = micoff} },
+	{ Mod4Mask,                    XK_F4,      spawn,          {.v = micoff} },
+	{ 0,                XF86XK_Favorites,      spawn,          {.v = connectMPOW} },
+	{ Mod4Mask,                   XK_F12,      spawn,          {.v = connectMPOW} },
+	{ Mod4Mask,                 XK_space,      spawn,          {.v = playpause} },
+	{ Mod4Mask,                 XK_Right,      spawn,          {.v = nexttrack} },
+	{ Mod4Mask,                  XK_Left,      spawn,          {.v = prevtrack} },
+
+	{ 0,                        XK_Print,      spawn,          {.v = peek} },
+
+	{ 0,        XF86XK_MonBrightnessDown,      spawn,          {.v = brightnessdec} },
+	{ ShiftMask,XF86XK_MonBrightnessDown,      spawn,          {.v = brightnessmin} },
+	{ Mod4Mask,                    XK_F5,      spawn,          {.v = brightnessdec} },
+	{ 0,          XF86XK_MonBrightnessUp,      spawn,          {.v = brightnessinc} },
+	{ ShiftMask,  XF86XK_MonBrightnessUp,      spawn,          {.v = brightnessmax} },
+	{ Mod4Mask,                    XK_F6,      spawn,          {.v = brightnessinc} },
+	{ 0,                  XF86XK_Display,      spawn,          {.v = autodisplay} },
+	{ Mod4Mask,                    XK_F7,      spawn,          {.v = autodisplay} },
+
+	{ MODKEY|ShiftMask,             XK_r,      spawn,          {.v = rstudiocmd} },
+	{ MODKEY|ShiftMask,             XK_x,      spawn,          {.v = launchcolumn} },
+	{ MODKEY|ShiftMask,             XK_z,      spawn,          {.v = relaunchcolumn} },
+	{ MODKEY|ShiftMask,             XK_k,      spawn,          {.v = slackcmd} },
+	{ MODKEY|ShiftMask,        XK_Delete,      spawn,          {.v = poweroff} },
+	{ MODKEY|ShiftMask,     XK_BackSpace,      spawn,          {.v = logout} },
 	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
 };
 
 /* button definitions */
 /* click can be ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle, ClkClientWin, or ClkRootWin */
-static const Button buttons[] = {
+static Button buttons[] = {
 	/* click                event mask      button          function        argument */
 	{ ClkLtSymbol,          0,              Button1,        setlayout,      {0} },
 	{ ClkLtSymbol,          0,              Button3,        setlayout,      {.v = &layouts[2]} },
